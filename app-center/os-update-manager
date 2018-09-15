@@ -1,0 +1,94 @@
+#!/bin/bash
+
+set -e
+
+option="$1"
+
+script_path="$(readlink -f ${0%/*})"
+
+_usage () {
+    echo "usage: ${0} <option>"
+    echo
+    echo "options:"
+    echo "    search        Search for OS updates"
+    echo "    get           Get OS updates"
+    echo "    query         Query OS updates"
+    echo "    install       Install OS updates"
+    exit ${1}
+}
+
+get-os-updates () {
+   if [[ ${EUID} -ne 0 ]]; then
+      echo "===== This option must be run as root! ====="
+      _usage 1
+   fi
+   if [ ! -f /etc/os-updates.conf ]; then
+      echo "URL=https://codeload.github.com/jonasjaguar/os-updates/master/" > /etc/os-updates.conf
+   fi
+   echo "Getting OS updates..."
+   source /etc/os-updates.conf
+   source /etc/os-release
+   if curl -s $URL/releases.txt | grep -q -Fx "$VERSION " ; then
+      mkdir -p /usr/share/os-updates/
+      curl -s $URL/releases.txt | sed "/$VERSION/Q" | sed s'/.$//' | tac > /usr/share/os-updates/updates.txt
+   else
+      rm -rf /usr/share/os-updates/*
+      ping -q -w1 -c1 www.kernel.org &>/dev/null || $(echo "===== No internet connection! =====" && exit 1)
+   fi
+}
+
+query-os-updates () {
+   if [ -s /usr/share/os-updates/updates.txt ] ; then
+      echo "===== Update to version $(tail -n1 /usr/share/os-updates/updates.txt) is available. ====="
+   else
+      echo "===== No OS updates are available. ====="
+   fi
+}
+
+install-os-updates () {
+   if [[ ${EUID} -ne 0 ]]; then
+      echo "===== This option must be run as root! ====="
+      _usage 1
+   fi
+   source /etc/os-updates.conf
+   if [ -s /usr/share/os-updates/updates.txt ] ; then
+      while read -r line ; do
+         osupdatefilename="$(echo "$line" | sed "s/ /_/g")"
+         echo "Downloading OS update for version \"$line\"..."
+         curl -s $URL/$osupdatefilename > "/usr/share/os-updates/$osupdatefilename"
+         echo "Installing OS update for version \"$line\"..."
+         bash "/usr/share/os-updates/$osupdatefilename"
+         echo ""
+      done < "/usr/share/os-updates/updates.txt"
+      echo ""
+      echo "===== Installed all OS updates. ====="
+      echo ""
+   else
+      echo "===== You need to search for OS updates first! ====="
+      _usage 1
+   fi
+   rm -rf /usr/share/os-updates/*
+}
+
+if [ $# -eq 0 ]; then
+    echo "===== No option specified! ====="
+    _usage 1
+fi
+
+if [ $option = "search" ]; then
+   get-os-updates
+   query-os-updates
+elif [ $option = "get" ]; then
+   get-os-updates
+elif [ $option = "query" ]; then
+   query-os-updates
+   osupdatesavailable=$?
+   if [ "$osupdatesavailable" -eq 1 ]; then
+      echo "===== No OS updates available. ====="
+   fi
+elif [ $option = "install" ]; then
+   install-os-updates
+else
+    echo "===== Invalid option! ====="
+    _usage 1
+fi

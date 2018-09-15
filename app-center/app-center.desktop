@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=App Center
+Exec=app-center
+GenericName=App Center
+Icon=plasmadiscover
+Type=Application
+MimeType=
+Categories=Qt;KDE;System;
+StartupNotify=true
+Terminal=false

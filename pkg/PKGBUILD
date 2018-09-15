@@ -1,0 +1,27 @@
+# Maintainer: Norcux OS Team
+
+pkgname=norcuxos-app-center
+pkgver=0.1
+pkgrel=1
+pkgdesc="The Norcux OS app center"
+arch=('x86_64')
+url="https://github.com/NorcuxOS/app-center"
+license=('GPL3')
+depends=(qt5-base)
+makedepends=(gcc make)
+options=()
+source=("https://github.com/NorcuxOS/app-center/archive/$pkgver.tar.gz")   
+md5sums=('SKIP')
+validpgpkeys=()
+
+
+build() {
+	cd "$srcdir/app-center-$pkgver/app-center"
+	qmake ./app-center.pro -spec linux-g++ && /usr/bin/make qmake_all
+	make
+}
+
+package() {
+	cd "$srcdir/app-center-$pkgver/app-center"
+	make INSTALL_ROOT="$pkgdir" install
+}

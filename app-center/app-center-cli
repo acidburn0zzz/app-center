@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+
+option="$1"
+
+script_path="$(readlink -f ${0%/*})"
+
+_usage () {
+    echo "usage: ${0} <option>"
+    echo
+    echo "options:"
+    echo "    update            Search for updates"
+    echo "    query-updates     Query updates"
+    exit ${1}
+}
+
+if [ $# -eq 0 ]; then
+    echo "===== No option specified! ====="
+    _usage 1
+fi
+
+if [ $option = "update" ]; then
+   if [[ ${EUID} -ne 0 ]]; then
+       echo "===== This option must be run as root! ====="
+       _usage 1
+   fi
+   os-update-manager get
+   pacman -Sy
+elif [ $option = "query-updates" ]; then
+   os-update-manager query
+   pacman -Qu
+else
+    echo "===== Invalid option! ====="
+    _usage 1
+fi
