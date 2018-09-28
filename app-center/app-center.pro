@@ -1,7 +1,6 @@
 QT       += core gui widgets
 
 TARGET = app-center
-TARGET.path = $$PREFIX/usr/bin
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -31,7 +30,10 @@ FORMS += \
     mainwindow.ui \
     applicationitemwidget.ui \
     installitemwidget.ui
-    
+
+app-center.path = $$PREFIX/usr/bin
+app-center.files += app-center
+
 scripts.path = $$PREFIX/usr/bin
 scripts.files += \
     app-center-cli \

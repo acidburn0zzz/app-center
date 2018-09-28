@@ -23,6 +23,7 @@ void ApplicationItemWidget::setInstalled(bool installed) {
         ui->installPushButton->setText("Install");
         ui->installPushButton->setIcon(QIcon::fromTheme("download"));
     }
+    ui->installPushButton->setEnabled(true);
 }
 
 void ApplicationItemWidget::setApplicationInfo(QString application, QString name, QString developer, QString URL, QPixmap icon, QString summary, QString description, QString package)

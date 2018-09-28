@@ -36,6 +36,8 @@ private slots:
     void on_backPushButton_4_released();
     void on_installNowPushButton_2_released();
 
+    void on_backPushButton_5_released();
+
 private:
     Ui::MainWindow *ui;
 };

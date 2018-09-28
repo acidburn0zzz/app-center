@@ -19,6 +19,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
     <widget class="QCheckBox" name="checkBox">
@@ -149,8 +152,7 @@
       <string>More Info</string>
      </property>
      <property name="icon">
-      <iconset theme="view-more-horizontal">
-       <normaloff>.</normaloff>.</iconset>
+      <iconset theme="documentinfo"/>
      </property>
      <property name="iconSize">
       <size>

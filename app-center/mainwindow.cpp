@@ -163,7 +163,7 @@ void MainWindow::categoryPushButtonReleased()
                           if (applicationThemeIconPos >= 0)
                           {
                               applicationThemeIcon = line.mid(applicationThemeIconPos + applicationThemeIconKeyword.length()).split("\"")[1];
-                              if (applicationThemeIcon == "null") {
+                              if (applicationThemeIcon == "null" || !(QIcon::hasThemeIcon(applicationThemeIcon))) {
                                   //Application Icon from Image
                                   if (localtestMetadata) {
                                       applicationIconPixmap = QPixmap( cacheFolder + distribution + "-app-center-localtest-metadata/applications/" + application + "/icon.png" );
@@ -199,6 +199,8 @@ void MainWindow::categoryPushButtonReleased()
                       }
                   }
 
+                  applicationItemWidget->setApplicationInfo(application, applicationName, applicationDeveloper, applicationURL, applicationIconPixmap, applicationSummary, applicationDescription, applicationPackage);
+
                   //Check if application is already installed
                   QProcess *pacmanSearchProcess;
                   QString pacmanSearchProcessProgram = "pacman";
@@ -218,10 +220,6 @@ void MainWindow::categoryPushButtonReleased()
                           applicationItemWidget->setInstalled(false);
                       }
                   });
-
-                  pacmanSearchProcess->waitForFinished(-1);
-
-                  applicationItemWidget->setApplicationInfo(application, applicationName, applicationDeveloper, applicationURL, applicationIconPixmap, applicationSummary, applicationDescription, applicationPackage);
 
                   //Remove application
                   connect( applicationItemWidget, &ApplicationItemWidget::removeApplication, [=]{
@@ -368,7 +366,6 @@ void MainWindow::queryUpdates()
                 ui->installUpdatesListWidget_2->setItemWidget (installListWidgetItem, installItemWidget);
 
                 connect( installItemWidget, &InstallItemWidget::showPackageUpdateList, [=]{
-                    ui->installUpdatesListWidget_2->clear();
                     foreach (QString update, updateList) {
                         QString package = update.split(" ").at(0);
                         QString oldVersion = update.split(" ").at(1);
@@ -377,16 +374,20 @@ void MainWindow::queryUpdates()
                         //If package update is not ignored
                         if (!(update.contains("[ignored]"))) {
                             //Add Package Update Item
-                            QListWidgetItem *installListWidgetItem = new QListWidgetItem(ui->installUpdatesListWidget_2);
-                            ui->installUpdatesListWidget_2->addItem( installListWidgetItem);
+                            QListWidgetItem *installListWidgetItem = new QListWidgetItem(ui->updateManagerMoreInfoListWidget);
+                            ui->updateManagerMoreInfoListWidget->addItem( installListWidgetItem);
                             InstallItemWidget *installItemWidget = new InstallItemWidget;
                             installItemWidget->setPackageUpdateInfo(package, oldVersion, newVersion);
                             installListWidgetItem->setSizeHint (installItemWidget->sizeHint());
-                            ui->installUpdatesListWidget_2->setItemWidget (installListWidgetItem, installItemWidget);
+                            ui->updateManagerMoreInfoListWidget->setItemWidget (installListWidgetItem, installItemWidget);
 
                             updatesAvailable = true;
                         }
                     }
+                    ui->pages->setCurrentIndex(4);
+                    lastPage.append(4);
+
+                    ui->updateManagerMoreInfoListWidget->setFocus();
                 });
 
                 ui->installNowPushButton_2->setEnabled(true);
@@ -486,6 +487,13 @@ void MainWindow::on_backPushButton_3_released()
 void MainWindow::on_backPushButton_4_released()
 {
     ui->pages->setCurrentIndex(0);
+    lastPage.removeLast();
+}
+
+//On back button press (update manager more info page)
+void MainWindow::on_backPushButton_5_released()
+{
+    ui->pages->setCurrentIndex(3);
     lastPage.removeLast();
 }
 

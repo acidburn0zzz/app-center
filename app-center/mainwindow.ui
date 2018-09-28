@@ -23,7 +23,7 @@
    <string>App Center</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="software-manager">
+   <iconset theme="muondiscover">
     <normaloff>.</normaloff>.</iconset>
   </property>
   <property name="locale">
@@ -65,9 +65,6 @@
       </property>
       <widget class="QWidget" name="mainPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
-        <property name="sizeConstraint">
-         <enum>QLayout::SetDefaultConstraint</enum>
-        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -181,7 +178,7 @@
              <string>Search for Updates</string>
             </property>
             <property name="icon">
-             <iconset theme="update-manager">
+             <iconset theme="view-refresh">
               <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="iconSize">
@@ -616,7 +613,7 @@
                       </size>
                      </property>
                      <property name="icon">
-                      <iconset theme="cs-network">
+                      <iconset theme="applications-internet">
                        <normaloff>.</normaloff>.</iconset>
                      </property>
                      <property name="iconSize">
@@ -1144,9 +1141,6 @@
       </widget>
       <widget class="QWidget" name="applicationListPage">
        <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="spacing">
-         <number>5</number>
-        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -1185,7 +1179,7 @@
              <string>Back</string>
             </property>
             <property name="icon">
-             <iconset theme="back">
+             <iconset theme="go-previous">
               <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="iconSize">
@@ -1355,7 +1349,7 @@
              <string>Back</string>
             </property>
             <property name="icon">
-             <iconset theme="back">
+             <iconset theme="go-previous">
               <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="iconSize">
@@ -1708,7 +1702,7 @@
        </layout>
       </widget>
       <widget class="QWidget" name="updateManagerPage">
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout_23">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -1747,7 +1741,7 @@
              <string>Back</string>
             </property>
             <property name="icon">
-             <iconset theme="back">
+             <iconset theme="go-previous">
               <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="iconSize">
@@ -2028,6 +2022,150 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="updateManagerMoreInfoPage">
+       <layout class="QVBoxLayout" name="verticalLayout_22">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="toolbarHorizontalLayout_6">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="backPushButton_5">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::TabFocus</enum>
+            </property>
+            <property name="text">
+             <string>Back</string>
+            </property>
+            <property name="icon">
+             <iconset theme="go-previous">
+              <normaloff>.</normaloff>.</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>16</width>
+              <height>16</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_14">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="verticalLayout_20">
+          <property name="leftMargin">
+           <number>3</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>3</number>
+          </property>
+          <property name="bottomMargin">
+           <number>3</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="updateManagerMoreInfoTitleLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>More Info</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="updateManagerMoreInfoListWidget">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::StrongFocus</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">alternate-background-color: rgba(16, 16, 16, 32)</string>
+            </property>
+            <property name="alternatingRowColors">
+             <bool>true</bool>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::NoSelection</enum>
+            </property>
+            <property name="verticalScrollMode">
+             <enum>QAbstractItemView::ScrollPerItem</enum>
+            </property>
+            <property name="horizontalScrollMode">
+             <enum>QAbstractItemView::ScrollPerItem</enum>
+            </property>
+            <property name="isWrapping" stdset="0">
+             <bool>false</bool>
+            </property>
+            <property name="spacing">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="applicationInfoPage">
        <layout class="QVBoxLayout" name="verticalLayout_12">
         <property name="leftMargin">
@@ -2068,7 +2206,7 @@
              <string>Back</string>
             </property>
             <property name="icon">
-             <iconset theme="back">
+             <iconset theme="go-previous">
               <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="iconSize">
@@ -2472,10 +2610,19 @@
        </layout>
       </widget>
       <widget class="QWidget" name="loadingPage">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
        <layout class="QVBoxLayout" name="verticalLayout_15">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
          <spacer name="verticalSpacer_13">
           <property name="orientation">

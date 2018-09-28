@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -47,22 +47,10 @@
    <item>
     <widget class="QFrame" name="applicationItem">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>500</width>
-       <height>120</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>500</width>
-       <height>120</height>
-      </size>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="spacing">
@@ -101,19 +89,6 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_1">
-        <item>
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item>
          <widget class="QLabel" name="applicationNameLabel">
           <property name="sizePolicy">
@@ -171,19 +146,6 @@
           </property>
          </widget>
         </item>
-        <item>
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
        </layout>
       </item>
       <item>
@@ -193,6 +155,9 @@
         </property>
         <item>
          <widget class="QPushButton" name="installPushButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
             <horstretch>0</horstretch>
@@ -209,11 +174,10 @@
            <enum>Qt::TabFocus</enum>
           </property>
           <property name="text">
-           <string>Install</string>
+           <string>Loading...</string>
           </property>
           <property name="icon">
-           <iconset theme="download">
-            <normaloff>.</normaloff>.</iconset>
+           <iconset theme="refactor"/>
           </property>
           <property name="iconSize">
            <size>
@@ -247,8 +211,7 @@
            <string>More Info</string>
           </property>
           <property name="icon">
-           <iconset theme="view-more-horizontal">
-            <normaloff>.</normaloff>.</iconset>
+           <iconset theme="documentinfo"/>
           </property>
           <property name="iconSize">
            <size>
