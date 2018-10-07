@@ -358,6 +358,8 @@ void MainWindow::queryUpdates()
         QString queryUpdatesProcessOutput = queryUpdatesProcess->readAllStandardOutput();
 
         if (queryUpdatesProcessOutput != "") {
+            updatesAvailable = false;
+
             QString OSUpdate = queryUpdatesProcessOutput.split("\n").first();
 
             if (OSUpdate != "===== No OS updates are available. =====") {
@@ -373,6 +375,8 @@ void MainWindow::queryUpdates()
                 updatesAvailable = true;
             }
 
+            qDebug() << queryUpdatesProcessOutput;
+            qDebug() << updateList;
             ui->installUpdatesListWidget_2->setEnabled(true);
             ui->backPushButton_3->setEnabled(true);
             if (updatesAvailable) {
@@ -414,6 +418,7 @@ void MainWindow::queryUpdates()
                 });
 
                 ui->installNowPushButton_2->setEnabled(true);
+                ui->installUpdatesListWidget_2->setFocus();
                 ui->searchingForUpdatesFrame_2->hide();
                 ui->installUpdatesListWidget_2->show();
             } else {
@@ -518,6 +523,8 @@ void MainWindow::on_backPushButton_5_released()
 {
     ui->pages->setCurrentIndex(3);
     lastPage.removeLast();
+
+    ui->installUpdatesListWidget_2->setFocus();
 }
 
 //On install button press (update manager page)
@@ -526,7 +533,7 @@ void MainWindow::on_installNowPushButton_2_released()
     QProcess *pacmanInstallProcess;
     QString pacmanInstallProcessProgram = "pkexec";
     QStringList pacmanInstallProcessArguments;
-    pacmanInstallProcessArguments << "pacman" << "-Syu" << "--noconfirm";
+    pacmanInstallProcessArguments << "pacman" << "-Su" << "--noconfirm";
     pacmanInstallProcess = new QProcess();
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("LC_ALL", "C");
@@ -534,13 +541,24 @@ void MainWindow::on_installNowPushButton_2_released()
 
     pacmanInstallProcess->start(pacmanInstallProcessProgram, pacmanInstallProcessArguments);
 
-    setCursor(Qt::WaitCursor);
+    ui->transactionStatusLabel->setText("Loading...");
+    ui->transactionStatusLabel->show();
+    ui->transactionProgressBar->setMaximum(0);
+    ui->transactionProgressBar->show();
+    ui->installTitleLabel_2->setEnabled(false);
     ui->backPushButton_3->setEnabled(false);
     ui->installNowPushButton_2->setEnabled(false);
     ui->installUpdatesListWidget_2->setEnabled(false);
 
     connect(pacmanInstallProcess, &QProcess::readyReadStandardOutput, [=]{
-        QTextStream(stdout) << pacmanInstallProcess->readAllStandardOutput();
+        QByteArray output = pacmanInstallProcess->readAllStandardOutput();
+        QTextStream(stdout) << output;
+        if (output.contains("Retrieving packages...")) {
+            ui->transactionStatusLabel->setText("Downloading and Updates...");
+        }
+        if (output.contains("checking keyring...")) {
+            ui->transactionStatusLabel->setText("Installing Updates...");
+        }
     });
     connect(pacmanInstallProcess, &QProcess::readyReadStandardError, [=]{
         QByteArray error = pacmanInstallProcess->readAllStandardError();
@@ -564,7 +582,9 @@ void MainWindow::on_installNowPushButton_2_released()
             QMessageBox::critical(this, "Error - App Center", "You are not authorized!");
         }
 
-        setCursor(Qt::ArrowCursor);
+        ui->transactionStatusLabel->hide();
+        ui->transactionProgressBar->hide();
+        ui->installTitleLabel_2->setEnabled(true);
         ui->backPushButton_3->setEnabled(true);
         ui->installUpdatesListWidget_2->setEnabled(true);
     });

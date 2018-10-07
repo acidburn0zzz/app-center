@@ -1,7 +1,7 @@
 # Maintainer: Norcux OS Team
 
 pkgname=norcuxos-app-center
-pkgver=0.2
+pkgver=0.3
 pkgrel=1
 pkgdesc="The Norcux OS app center"
 arch=('x86_64')
