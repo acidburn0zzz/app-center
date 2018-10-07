@@ -67,6 +67,8 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     ui->installUpdatesListWidget_2->hide();
+    ui->transactionStatusLabel->hide();
+    ui->transactionProgressBar->hide();
 }
 
 MainWindow::~MainWindow()
@@ -122,7 +124,7 @@ void MainWindow::categoryPushButtonReleased()
                   QPixmap applicationIconPixmap;
                   QString applicationSummary;
                   QString applicationDescription;
-                  QString applicationPackage;
+                  QStringList applicationPackages;
 
                   QTextStream in(&applicationMetadataFile);
                   while (!in.atEnd())
@@ -135,34 +137,34 @@ void MainWindow::categoryPushButtonReleased()
                           QString applicationThemeIconKeyword = "THEME_ICON=";
                           QString applicationSummaryKeyword = "SUMMARY=";
                           QString applicationDescriptionKeyword = "DESCRIPTION=";
-                          QString applicationPackageKeyword = "PACKAGE=";
+                          QString applicationPackagesKeyword = "PACKAGES=";
 
                           //Application Name
                           int applicationNamePos = line.indexOf(applicationNameKeyword);
                           if (applicationNamePos >= 0)
                           {
-                              applicationName = line.mid(applicationNamePos + applicationNameKeyword.length()).split("\"")[1];
+                              applicationName = line.mid(applicationNamePos + applicationNameKeyword.length());
                           }
 
                           //Application Developer
                           int applicationDeveloperPos = line.indexOf(applicationDeveloperKeyword);
                           if (applicationDeveloperPos >= 0)
                           {
-                              applicationDeveloper = line.mid(applicationDeveloperPos + applicationDeveloperKeyword.length()).split("\"")[1];
+                              applicationDeveloper = line.mid(applicationDeveloperPos + applicationDeveloperKeyword.length());
                           }
 
                           //Application URL
                           int applicationURLPos = line.indexOf(applicationURLKeyword);
                           if (applicationURLPos >= 0)
                           {
-                              applicationURL = line.mid(applicationURLPos + applicationURLKeyword.length()).split("\"")[1];
+                              applicationURL = line.mid(applicationURLPos + applicationURLKeyword.length());
                           }
 
                           //Application Theme Icon
                           int applicationThemeIconPos = line.indexOf(applicationThemeIconKeyword);
                           if (applicationThemeIconPos >= 0)
                           {
-                              applicationThemeIcon = line.mid(applicationThemeIconPos + applicationThemeIconKeyword.length()).split("\"")[1];
+                              applicationThemeIcon = line.mid(applicationThemeIconPos + applicationThemeIconKeyword.length());
                               if (applicationThemeIcon == "null" || !(QIcon::hasThemeIcon(applicationThemeIcon))) {
                                   //Application Icon from Image
                                   if (localtestMetadata) {
@@ -180,32 +182,32 @@ void MainWindow::categoryPushButtonReleased()
                           int applicationSummaryPos = line.indexOf(applicationSummaryKeyword);
                           if (applicationSummaryPos >= 0)
                           {
-                              applicationSummary = line.mid(applicationSummaryPos + applicationSummaryKeyword.length()).split("\"")[1];
+                              applicationSummary = line.mid(applicationSummaryPos + applicationSummaryKeyword.length());
                           }
 
                           //Application Description
                           int applicationDescriptionPos = line.indexOf(applicationDescriptionKeyword);
                           if (applicationDescriptionPos >= 0)
                           {
-                              applicationDescription = line.mid(applicationDescriptionPos + applicationDescriptionKeyword.length()).split("\"")[1];
+                              applicationDescription = line.mid(applicationDescriptionPos + applicationDescriptionKeyword.length());
                           }
 
-                          //Application Package
-                          int applicationPackagePos = line.indexOf(applicationPackageKeyword);
-                          if (applicationPackagePos >= 0)
+                          //Application Packages
+                          int applicationPackagesPos = line.indexOf(applicationPackagesKeyword);
+                          if (applicationPackagesPos >= 0)
                           {
-                              applicationPackage = line.mid(applicationPackagePos + applicationPackageKeyword.length()).split("\"")[1];
+                              applicationPackages = line.mid(applicationPackagesPos + applicationPackagesKeyword.length()).split(" ");
                           }
                       }
                   }
 
-                  applicationItemWidget->setApplicationInfo(application, applicationName, applicationDeveloper, applicationURL, applicationIconPixmap, applicationSummary, applicationDescription, applicationPackage);
+                  applicationItemWidget->setApplicationInfo(application, applicationName, applicationDeveloper, applicationURL, applicationIconPixmap, applicationSummary, applicationDescription, applicationPackages[0]);
 
                   //Check if application is already installed
                   QProcess *pacmanSearchProcess;
                   QString pacmanSearchProcessProgram = "pacman";
                   QStringList pacmanSearchProcessArguments;
-                  pacmanSearchProcessArguments << "-Qs" << "^" + applicationPackage + "$";
+                  pacmanSearchProcessArguments << "-Qs" << "^" + applicationPackages[0] + "$";
                   pacmanSearchProcess = new QProcess();
                   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                   env.insert("LC_ALL", "C");
@@ -226,7 +228,7 @@ void MainWindow::categoryPushButtonReleased()
                       QProcess *pacmanRemoveProcess;
                       QString pacmanRemoveProcessProgram = "pkexec";
                       QStringList pacmanRemoveProcessArguments;
-                      pacmanRemoveProcessArguments << "pacman" << "-Rs" << "--noconfirm" << applicationPackage;
+                      pacmanRemoveProcessArguments << "pacman" << "-Rs" << "--noconfirm" << applicationPackages;
                       pacmanRemoveProcess = new QProcess();
                       QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                       env.insert("LC_ALL", "C");
@@ -234,12 +236,20 @@ void MainWindow::categoryPushButtonReleased()
 
                       pacmanRemoveProcess->start(pacmanRemoveProcessProgram, pacmanRemoveProcessArguments);
 
-                      setCursor(Qt::WaitCursor);
+                      ui->transactionStatusLabel->setText("Loading...");
+                      ui->transactionStatusLabel->show();
+                      ui->transactionProgressBar->setMaximum(0);
+                      ui->transactionProgressBar->show();
+                      ui->categoryTitleLabel->setEnabled(false);
                       ui->applicationListWidget->setEnabled(false);
                       ui->backPushButton_1->setEnabled(false);
 
                       connect(pacmanRemoveProcess, &QProcess::readyReadStandardOutput, [=]{
-                          QTextStream(stdout) << pacmanRemoveProcess->readAllStandardOutput();
+                          QByteArray output = pacmanRemoveProcess->readAllStandardOutput();
+                          QTextStream(stdout) << output;
+                          if (output.contains("Processing package changes...")) {
+                              ui->transactionStatusLabel->setText("Removing...");
+                          }
                       });
                       connect(pacmanRemoveProcess, &QProcess::readyReadStandardError, [=]{
                           QByteArray error = pacmanRemoveProcess->readAllStandardError();
@@ -256,7 +266,9 @@ void MainWindow::categoryPushButtonReleased()
                               QMessageBox::critical(this, "Error - App Center", "You are not authorized!");
                           }
 
-                          setCursor(Qt::ArrowCursor);
+                          ui->transactionStatusLabel->hide();
+                          ui->transactionProgressBar->hide();
+                          ui->categoryTitleLabel->setEnabled(true);
                           ui->applicationListWidget->setEnabled(true);
                           ui->backPushButton_1->setEnabled(true);
                       });
@@ -268,7 +280,7 @@ void MainWindow::categoryPushButtonReleased()
                       QProcess *pacmanInstallProcess;
                       QString pacmanInstallProcessProgram = "pkexec";
                       QStringList pacmanInstallProcessArguments;
-                      pacmanInstallProcessArguments << "pacman" << "-Sy" << "--noconfirm" << applicationPackage;
+                      pacmanInstallProcessArguments << "pacman" << "-Sy" << "--noconfirm" << applicationPackages;
                       pacmanInstallProcess = new QProcess();
                       QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                       env.insert("LC_ALL", "C");
@@ -276,12 +288,20 @@ void MainWindow::categoryPushButtonReleased()
 
                       pacmanInstallProcess->start(pacmanInstallProcessProgram, pacmanInstallProcessArguments);
 
-                      setCursor(Qt::WaitCursor);
+                      ui->transactionStatusLabel->setText("Loading...");
+                      ui->transactionStatusLabel->show();
+                      ui->transactionProgressBar->setMaximum(0);
+                      ui->transactionProgressBar->show();
+                      ui->categoryTitleLabel->setEnabled(false);
                       ui->applicationListWidget->setEnabled(false);
                       ui->backPushButton_1->setEnabled(false);
 
                       connect(pacmanInstallProcess, &QProcess::readyReadStandardOutput, [=]{
-                          QTextStream(stdout) << pacmanInstallProcess->readAllStandardOutput();
+                          QByteArray output = pacmanInstallProcess->readAllStandardOutput();
+                          QTextStream(stdout) << output;
+                          if (output.contains("Processing package changes...")) {
+                              ui->transactionStatusLabel->setText("Installing...");
+                          }
                       });
                       connect(pacmanInstallProcess, &QProcess::readyReadStandardError, [=]{
                           QByteArray error = pacmanInstallProcess->readAllStandardError();
@@ -298,12 +318,15 @@ void MainWindow::categoryPushButtonReleased()
                               QMessageBox::critical(this, "Error - App Center", "You are not authorized!");
                           }
 
-                          setCursor(Qt::ArrowCursor);
+                          ui->transactionStatusLabel->hide();
+                          ui->transactionProgressBar->hide();
+                          ui->categoryTitleLabel->setEnabled(true);
                           ui->applicationListWidget->setEnabled(true);
-                          ui->backPushButton_1->setEnabled(true);                      
+                          ui->backPushButton_1->setEnabled(true);
                       });
 
                   });
+
                   applicationMetadataFile.close();
               }
           }
