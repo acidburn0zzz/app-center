@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 #include "applicationitemwidget.h"
 #include "installitemwidget.h"
-#include <QtDebug>
+#include <QTextStream>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
@@ -204,37 +204,38 @@ void MainWindow::categoryPushButtonReleased()
                   applicationItemWidget->setApplicationInfo(application, applicationName, applicationDeveloper, applicationURL, applicationIconPixmap, applicationSummary, applicationDescription, applicationPackages[0]);
 
                   //Check if application is already installed
-                  QProcess *pacmanSearchProcess;
-                  QString pacmanSearchProcessProgram = "pacman";
-                  QStringList pacmanSearchProcessArguments;
-                  pacmanSearchProcessArguments << "-Qs" << "^" + applicationPackages[0] + "$";
-                  pacmanSearchProcess = new QProcess();
+                  QProcess *packageManagerSearchProcess;
+                  QString packageManagerSearchProcessProgram = "dpkg";
+                  QStringList packageManagerSearchProcessArguments;
+                  packageManagerSearchProcessArguments << "--get-selections" << applicationPackages[0];
+                  packageManagerSearchProcess = new QProcess();
                   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                   env.insert("LC_ALL", "C");
-                  pacmanSearchProcess->setProcessEnvironment(env);
+                  packageManagerSearchProcess->setProcessEnvironment(env);
 
-                  pacmanSearchProcess->start(pacmanSearchProcessProgram, pacmanSearchProcessArguments);
+                  packageManagerSearchProcess->start(packageManagerSearchProcessProgram, packageManagerSearchProcessArguments);
 
-                  connect(pacmanSearchProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
-                      if (exitCode == 0) {
+                  connect(packageManagerSearchProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+                      QByteArray output = packageManagerSearchProcess->readAllStandardOutput();
+                      if (output.contains("install")) {
                           applicationItemWidget->setInstalled(true);
-                      } else if (exitCode == 1) {
+                      } else if (output.contains("dpkg: no packages found matching") || output.isEmpty()) {
                           applicationItemWidget->setInstalled(false);
                       }
                   });
 
                   //Remove application
                   connect( applicationItemWidget, &ApplicationItemWidget::removeApplication, [=]{
-                      QProcess *pacmanRemoveProcess;
-                      QString pacmanRemoveProcessProgram = "pkexec";
-                      QStringList pacmanRemoveProcessArguments;
-                      pacmanRemoveProcessArguments << "pacman" << "-Rs" << "--noconfirm" << applicationPackages;
-                      pacmanRemoveProcess = new QProcess();
+                      QProcess *packageManagerRemoveProcess;
+                      QString packageManagerRemoveProcessProgram = "pkexec";
+                      QStringList packageManagerRemoveProcessArguments;
+                      packageManagerRemoveProcessArguments << "apt-get" << "remove" << "--yes" << applicationPackages;
+                      packageManagerRemoveProcess = new QProcess();
                       QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                       env.insert("LC_ALL", "C");
-                      pacmanRemoveProcess->setProcessEnvironment(env);
+                      packageManagerRemoveProcess->setProcessEnvironment(env);
 
-                      pacmanRemoveProcess->start(pacmanRemoveProcessProgram, pacmanRemoveProcessArguments);
+                      packageManagerRemoveProcess->start(packageManagerRemoveProcessProgram, packageManagerRemoveProcessArguments);
 
                       ui->transactionStatusLabel->setText("Loading...");
                       ui->transactionStatusLabel->show();
@@ -244,19 +245,19 @@ void MainWindow::categoryPushButtonReleased()
                       ui->applicationListWidget->setEnabled(false);
                       ui->backPushButton_1->setEnabled(false);
 
-                      connect(pacmanRemoveProcess, &QProcess::readyReadStandardOutput, [=]{
-                          QByteArray output = pacmanRemoveProcess->readAllStandardOutput();
+                      connect(packageManagerRemoveProcess, &QProcess::readyReadStandardOutput, [=]{
+                          QByteArray output = packageManagerRemoveProcess->readAllStandardOutput();
                           QTextStream(stdout) << output;
-                          if (output.contains("Processing package changes...")) {
+                          if (output.contains("(Reading database ...")) {
                               ui->transactionStatusLabel->setText("Removing...");
                           }
                       });
-                      connect(pacmanRemoveProcess, &QProcess::readyReadStandardError, [=]{
-                          QByteArray error = pacmanRemoveProcess->readAllStandardError();
+                      connect(packageManagerRemoveProcess, &QProcess::readyReadStandardError, [=]{
+                          QByteArray error = packageManagerRemoveProcess->readAllStandardError();
                           QTextStream(stderr) << error;
                       });
 
-                      connect(pacmanRemoveProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+                      connect(packageManagerRemoveProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
                           if (exitCode == 0) {
                               QTextStream(stdout) << "Done.\n";
                               applicationItemWidget->setInstalled(false);
@@ -277,16 +278,16 @@ void MainWindow::categoryPushButtonReleased()
 
                   //Install application
                   connect( applicationItemWidget, &ApplicationItemWidget::installApplication, [=]{
-                      QProcess *pacmanInstallProcess;
-                      QString pacmanInstallProcessProgram = "pkexec";
-                      QStringList pacmanInstallProcessArguments;
-                      pacmanInstallProcessArguments << "pacman" << "-Sy" << "--noconfirm" << applicationPackages;
-                      pacmanInstallProcess = new QProcess();
+                      QProcess *packageManagerInstallProcess;
+                      QString packageManagerInstallProcessProgram = "pkexec";
+                      QStringList packageManagerInstallProcessArguments;
+                      packageManagerInstallProcessArguments << "apt-get" << "install" << "--yes" << applicationPackages;
+                      packageManagerInstallProcess = new QProcess();
                       QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
                       env.insert("LC_ALL", "C");
-                      pacmanInstallProcess->setProcessEnvironment(env);
+                      packageManagerInstallProcess->setProcessEnvironment(env);
 
-                      pacmanInstallProcess->start(pacmanInstallProcessProgram, pacmanInstallProcessArguments);
+                      packageManagerInstallProcess->start(packageManagerInstallProcessProgram, packageManagerInstallProcessArguments);
 
                       ui->transactionStatusLabel->setText("Loading...");
                       ui->transactionStatusLabel->show();
@@ -296,19 +297,21 @@ void MainWindow::categoryPushButtonReleased()
                       ui->applicationListWidget->setEnabled(false);
                       ui->backPushButton_1->setEnabled(false);
 
-                      connect(pacmanInstallProcess, &QProcess::readyReadStandardOutput, [=]{
-                          QByteArray output = pacmanInstallProcess->readAllStandardOutput();
+                      connect(packageManagerInstallProcess, &QProcess::readyReadStandardOutput, [=]{
+                          QByteArray output = packageManagerInstallProcess->readAllStandardOutput();
                           QTextStream(stdout) << output;
-                          if (output.contains("Processing package changes...")) {
+                          if (output.contains("Get:")) {
+                              ui->transactionStatusLabel->setText("Downloading...");
+                          } else if (output.contains("(Reading database ...")) {
                               ui->transactionStatusLabel->setText("Installing...");
                           }
                       });
-                      connect(pacmanInstallProcess, &QProcess::readyReadStandardError, [=]{
-                          QByteArray error = pacmanInstallProcess->readAllStandardError();
+                      connect(packageManagerInstallProcess, &QProcess::readyReadStandardError, [=]{
+                          QByteArray error = packageManagerInstallProcess->readAllStandardError();
                           QTextStream(stderr) << error;
                       });
 
-                      connect(pacmanInstallProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+                      connect(packageManagerInstallProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
                           if (exitCode == 0) {
                               QTextStream(stdout) << "Done.\n";
                               applicationItemWidget->setInstalled(true);
@@ -368,6 +371,7 @@ void MainWindow::queryUpdates()
 
             QStringList updateList = queryUpdatesProcessOutput.split("\n");
             updateList.removeFirst();
+            updateList.removeFirst();
             //Remove empty string from update list
             updateList.removeLast();
 
@@ -375,8 +379,6 @@ void MainWindow::queryUpdates()
                 updatesAvailable = true;
             }
 
-            qDebug() << queryUpdatesProcessOutput;
-            qDebug() << updateList;
             ui->installUpdatesListWidget_2->setEnabled(true);
             ui->backPushButton_3->setEnabled(true);
             if (updatesAvailable) {
@@ -395,8 +397,10 @@ void MainWindow::queryUpdates()
                 connect( installItemWidget, &InstallItemWidget::showPackageUpdateList, [=]{
                     foreach (QString update, updateList) {
                         QString package = update.split(" ").at(0);
+                        package = package.split("/").first();
                         QString oldVersion = update.split(" ").at(1);
-                        QString newVersion = update.split(" ").at(3);
+                        QString newVersion = update.split(" ").at(5);
+                        newVersion.chop(1);
 
                         //If package update is not ignored
                         if (!(update.contains("[ignored]"))) {
@@ -530,16 +534,16 @@ void MainWindow::on_backPushButton_5_released()
 //On install button press (update manager page)
 void MainWindow::on_installNowPushButton_2_released()
 {
-    QProcess *pacmanInstallProcess;
-    QString pacmanInstallProcessProgram = "pkexec";
-    QStringList pacmanInstallProcessArguments;
-    pacmanInstallProcessArguments << "pacman" << "-Su" << "--noconfirm";
-    pacmanInstallProcess = new QProcess();
+    QProcess *packageManagerInstallProcess;
+    QString packageManagerInstallProcessProgram = "pkexec";
+    QStringList packageManagerInstallProcessArguments;
+    packageManagerInstallProcessArguments << "apt-get" << "upgrade" << "--yes";
+    packageManagerInstallProcess = new QProcess();
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     env.insert("LC_ALL", "C");
-    pacmanInstallProcess->setProcessEnvironment(env);
+    packageManagerInstallProcess->setProcessEnvironment(env);
 
-    pacmanInstallProcess->start(pacmanInstallProcessProgram, pacmanInstallProcessArguments);
+    packageManagerInstallProcess->start(packageManagerInstallProcessProgram, packageManagerInstallProcessArguments);
 
     ui->transactionStatusLabel->setText("Loading...");
     ui->transactionStatusLabel->show();
@@ -550,22 +554,22 @@ void MainWindow::on_installNowPushButton_2_released()
     ui->installNowPushButton_2->setEnabled(false);
     ui->installUpdatesListWidget_2->setEnabled(false);
 
-    connect(pacmanInstallProcess, &QProcess::readyReadStandardOutput, [=]{
-        QByteArray output = pacmanInstallProcess->readAllStandardOutput();
+    connect(packageManagerInstallProcess, &QProcess::readyReadStandardOutput, [=]{
+        QByteArray output = packageManagerInstallProcess->readAllStandardOutput();
         QTextStream(stdout) << output;
-        if (output.contains("Retrieving packages...")) {
-            ui->transactionStatusLabel->setText("Downloading and Updates...");
+        if (output.contains("Get:")) {
+            ui->transactionStatusLabel->setText("Downloading updates...");
         }
-        if (output.contains("checking keyring...")) {
-            ui->transactionStatusLabel->setText("Installing Updates...");
+        if (output.contains("(Reading database ...")) {
+            ui->transactionStatusLabel->setText("Installing updates...");
         }
     });
-    connect(pacmanInstallProcess, &QProcess::readyReadStandardError, [=]{
-        QByteArray error = pacmanInstallProcess->readAllStandardError();
+    connect(packageManagerInstallProcess, &QProcess::readyReadStandardError, [=]{
+        QByteArray error = packageManagerInstallProcess->readAllStandardError();
         QTextStream(stderr) << error;
     });
 
-    connect(pacmanInstallProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+    connect(packageManagerInstallProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
         if (exitCode == 0) {
             //If finished installing package Updates
             installPackageUpdateList.clear();

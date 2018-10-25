@@ -26,10 +26,10 @@ if [ $option = "update" ]; then
        _usage 1
    fi
    os-update-manager get
-   pacman -Sy
+   apt-get update
 elif [ $option = "query-updates" ]; then
    os-update-manager query
-   pacman -Qu
+   apt list --upgradable
 else
     echo "===== Invalid option! ====="
     _usage 1

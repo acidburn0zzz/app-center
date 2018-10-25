@@ -1,0 +1,26 @@
+maintainer="Norcux OS Team <NorcuxOS@protonmail.com>"
+pkgname=norcuxos-app-center
+pkgver=0.10
+pkgrel=1
+distribution="buster"
+urgency="medium"
+pkgdesc="Norcux OS app center\nThis package contains the Norcux OS app center."
+section="utils"
+priority="optional"
+arch=('amd64')
+url="https://github.com/NorcuxOS/app-center"
+depends=('qt5-default' 'curl')
+source=("https://codeload.github.com/NorcuxOS/app-center/tar.gz/${pkgver}")
+
+build() {
+	cd "${srcdir}"/app-center-${pkgver}/app-center/
+	
+	qmake ./app-center.pro -spec linux-g++ && /usr/bin/make qmake_all
+	make
+}
+
+package() {
+	cd "${srcdir}"/app-center-${pkgver}/app-center/
+	
+	make INSTALL_ROOT="${pkgdir}" install
+}
