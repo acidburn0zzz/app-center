@@ -17,8 +17,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->transactionProgressBar->hide();
+    ui->transactionStatusLabel->hide();
+
     //Settings
-    QSettings settings;
     if (!(settings.contains("Distribution"))) {
         settings.setValue("Distribution", "NorcuxOS");
     }
@@ -30,8 +32,16 @@ MainWindow::MainWindow(QWidget *parent) :
     metadataRepo = settings.value("MetadataRepo").toString();
 
     //Set icons
+    ui->softwareCenterLogo->setPixmap( QIcon::fromTheme("muondiscover").pixmap(64, 64) );
     ui->updateManagerLogo_1->setPixmap( QIcon::fromTheme("system-software-update").pixmap(64, 64) );
     ui->updateManagerLogo_2->setPixmap( QIcon::fromTheme("system-software-update").pixmap(64, 64) );
+
+    //Connect category buttons
+    QList<QPushButton *> categoryButtons = ui->categoriesFrame->findChildren<QPushButton *>();
+    foreach(QPushButton *categoryButton, categoryButtons)
+    {
+        connect(categoryButton, &QPushButton::released, this, &MainWindow::categoryPushButtonReleased);
+    }
 
     //Setup cache
     cacheFolder = QString( QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) + "/" + QCoreApplication::applicationName() + "/");
@@ -46,29 +56,52 @@ MainWindow::MainWindow(QWidget *parent) :
             localtestMetadataDir.mkpath(".");
         }
     } else {
-        QProcess *downloadMetadataCache = new QProcess();
-        downloadMetadataCache->setWorkingDirectory(cacheFolder);
-        downloadMetadataCache->start("curl", QStringList() << metadataRepo << "--output" << distribution + "-appcenter-metadata.tar.gz");
-        //TODO: Use a singal instead
-        downloadMetadataCache->waitForFinished(-1);
-
-        QProcess *unpackMetadataCache = new QProcess();
-        unpackMetadataCache->setWorkingDirectory(cacheFolder);
-        unpackMetadataCache->start("tar", QStringList() << "-xf" << distribution + "-appcenter-metadata.tar.gz" << "--one-top-level=" + distribution + "-app-center-metadata" << "--strip" << "1");
-        //TODO: Use a singal instead
-        unpackMetadataCache->waitForFinished(-1);
+        QProcess *downloadMetadataCacheProcess = new QProcess();
+        downloadMetadataCacheProcess->setWorkingDirectory(cacheFolder);
+        downloadMetadataCacheProcess->start("curl", QStringList() << metadataRepo << "--output" << distribution + "-app-center-metadata.tar.gz");
+        connect(downloadMetadataCacheProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+            if (downloadMetadataCacheProcess->exitCode() == 0) {
+                QProcess *unpackMetadataCache = new QProcess();
+                unpackMetadataCache->setWorkingDirectory(cacheFolder);
+                unpackMetadataCache->start("tar", QStringList() << "-xf" << distribution + "-app-center-metadata.tar.gz" << "--one-top-level=" + distribution + "-app-center-metadata" << "--strip" << "1");
+                connect(unpackMetadataCache, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+                    if (unpackMetadataCache->exitCode() == 0) {
+                        ui->installUpdatesListWidget_2->hide();
+                        ui->transactionStatusLabel->hide();
+                        ui->transactionProgressBar->hide();
+                        if (settings.contains("FirstRunDone")) {
+                            if (settings.value("FirstRunDone") == true) {
+                                initialUpdate = false;
+                                ui->pages->setCurrentIndex(0);
+                                lastPage.append(0);
+                            } else {
+                                ui->loadingLabel->setText("Downloading data, this may take some time...");
+                                getUpdates();
+                            }
+                            settings.setValue("FirstRunDone", "true");
+                        } else {
+                            ui->loadingLabel->setText("Downloading data, this may take some time...");
+                            getUpdates();
+                            settings.setValue("FirstRunDone", "true");
+                        }
+                    }
+                });
+            } else {
+                //Workaround for wrong MessageBox position
+                QProcess *sleepProcess = new QProcess();
+                sleepProcess->start("sleep", QStringList() << "0.5");
+                connect(sleepProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
+                    QByteArray error = downloadMetadataCacheProcess->readAllStandardError();
+                    if (error.contains("Could not resolve host")) {
+                        QMessageBox::critical(this, "Error - App Center", "No internet connection!");
+                    } else {
+                        QMessageBox::critical(this, "Error - App Center", "An unknown error occoured!");
+                    }
+                    exit(1);
+                });
+            }
+        });
     }
-
-    //Connect category buttons
-    QList<QPushButton *> categoryButtons = ui->categoriesFrame->findChildren<QPushButton *>();
-    foreach(QPushButton *categoryButton, categoryButtons)
-    {
-        connect(categoryButton, &QPushButton::released, this, &MainWindow::categoryPushButtonReleased);
-    }
-
-    ui->installUpdatesListWidget_2->hide();
-    ui->transactionStatusLabel->hide();
-    ui->transactionProgressBar->hide();
 }
 
 MainWindow::~MainWindow()
@@ -464,20 +497,30 @@ void MainWindow::getUpdates()
     connect(updateProcess, &QProcess::readyReadStandardOutput, [=]{
         QTextStream(stdout) << updateProcess->readAllStandardOutput();
     });
-    connect(updateProcess, &QProcess::readyReadStandardError, [=]{
-        QByteArray error = updateProcess->readAllStandardError();
-        QTextStream(stderr) << error;
-    });
 
     connect(updateProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [=](int exitCode, QProcess::ExitStatus exitStatus){
         if (exitCode == 0) {
-            MainWindow::queryUpdates();
-        } else if (exitCode == 1) {
-            QMessageBox::critical(this, "Error - App Center", "An unknown error occoured!");
-            ui->pages->setCurrentIndex(0);
-            lastPage.append(0);
-        } else if (exitCode == 127) {
-            QMessageBox::critical(this, "Error - App Center", "You are not authorized!");
+            if (initialUpdate) {
+                initialUpdate = false;
+                ui->pages->setCurrentIndex(0);
+                lastPage.append(0);
+            } else {
+                MainWindow::queryUpdates();
+            }
+        } else {
+            QByteArray error = updateProcess->readAllStandardError();
+            QTextStream(stderr) << error;
+            if (error.contains("Error executing command as another user: Not authorized")) {
+                QMessageBox::critical(this, "Error - App Center", "You are not authorized!");
+            } else if (error.contains("===== No internet connection! =====")) {
+                QMessageBox::critical(this, "Error - App Center", "No internet connection!");
+            } else {
+                QMessageBox::critical(this, "Error - App Center", "An unknown error occoured!");
+            }
+
+            if (initialUpdate) {
+                exit(1);
+            }
             ui->pages->setCurrentIndex(0);
             lastPage.append(0);
         }

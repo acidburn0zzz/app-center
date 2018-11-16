@@ -33,7 +33,7 @@ get-os-updates () {
       curl -s $URL/releases.txt | sed "/$VERSION/Q" | sed s'/.$//' | tac > /usr/share/os-updates/updates.txt
    else
       rm -rf /usr/share/os-updates/*
-      ping -q -w1 -c1 www.kernel.org &>/dev/null || $(echo "===== No internet connection! =====" && exit 1)
+      ping -q -w1 -c1 www.kernel.org &>/dev/null || (>&2 echo "===== No internet connection! =====" && exit 1)
    fi
 }
 

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSettings>
 
 namespace Ui {
 class MainWindow;
@@ -15,6 +16,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    QSettings settings;
     QString distribution;
     QString metadataRepo;
     QString cacheFolder;
@@ -22,11 +24,11 @@ public:
     QList<int> lastPage;
     QStringList installPackageUpdateList;
     bool updatesAvailable = false;
+    bool initialUpdate = true;
 
     void categoryPushButtonReleased();
     void queryUpdates();
     void getUpdates();
-
 
 private slots:
     void on_searchForUpdatesPushButton_released();
