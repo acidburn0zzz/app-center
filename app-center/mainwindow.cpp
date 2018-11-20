@@ -431,9 +431,9 @@ void MainWindow::queryUpdates()
                     foreach (QString update, updateList) {
                         QString package = update.split(" ").at(0);
                         package = package.split("/").first();
-                        QString oldVersion = update.split(" ").at(1);
-                        QString newVersion = update.split(" ").at(5);
-                        newVersion.chop(1);
+                        QString oldVersion = update.split(" ").at(5);
+                        QString newVersion = update.split(" ").at(1);
+                        oldVersion.chop(1);
 
                         //If package update is not ignored
                         if (!(update.contains("[ignored]"))) {

@@ -1,3 +1,9 @@
+norcuxos-app-center (0.11.1-1) buster; urgency=medium
+
+  * Fix showing update version
+
+ -- Norcux OS Team <NorcuxOS@protonmail.com>  Tue, 20 Nov 2018 15:30:00 +0100
+
 norcuxos-app-center (0.11-1) buster; urgency=medium
 
   * Improve startup

@@ -1,6 +1,6 @@
 maintainer="Norcux OS Team <NorcuxOS@protonmail.com>"
 pkgname=norcuxos-app-center
-pkgver=0.11
+pkgver=0.11.1
 pkgrel=1
 distribution="buster"
 urgency="medium"
@@ -9,7 +9,7 @@ section="utils"
 priority="optional"
 arch=('amd64')
 url="https://github.com/NorcuxOS/app-center"
-depends=('qt5-default' 'curl')
+depends=('qt5-default' 'g++' 'curl')
 source=("https://codeload.github.com/NorcuxOS/app-center/tar.gz/${pkgver}")
 
 build() {
